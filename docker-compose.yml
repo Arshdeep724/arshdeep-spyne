@@ -1,0 +1,50 @@
+version: '3.1'
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: my_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: my_database
+      POSTGRES_USER: my_user
+      POSTGRES_PASSWORD: my_password
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - '6379:6379'
+  
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./apps/auth/Dockerfile
+    container_name: auth-service
+    depends_on:
+      - redis
+      - postgres
+    ports:
+      - '3000:3000'
+    environment:
+      AUTH_DATABASE_URL: postgres://my_user:my_password@postgres:5432/my_database
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    command: ["node", "dist/apps/auth/main.js"]
+  
+  post-service:
+    build:
+      context: .
+      dockerfile: ./apps/post/Dockerfile
+    container_name: post-service
+    depends_on:
+      - redis
+      - postgres
+    ports:
+      - '3001:3000'
+    environment:
+      POST_DATABASE_URL: postgres://my_user:my_password@postgres:5432/my_database
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    command: ["node", "dist/apps/post/main.js"]

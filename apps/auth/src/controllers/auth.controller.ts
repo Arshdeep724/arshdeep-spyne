@@ -3,22 +3,28 @@ import {
   Controller,
   Delete,
   Get,
+  Inject,
   Post,
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { CreateUserDto, LogoutUserDto } from 'src/auth/dto';
+import { CreateUserDto, LogoutUserDto } from '../dto';
 import { AuthRepository } from '../repositories/auth.repository';
 import { LocalAuthGuard, RefreshTokenAuthGuard } from '../passport/guards';
 import { Public } from '../decorators';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authRepository: AuthRepository) {}
+  constructor(
+    private readonly authRepository: AuthRepository,
+    @Inject('POST_SERVICE') private readonly postClient: ClientProxy,
+  ) {}
 
+  @Public()
   @Get('test')
   async test() {
-    return this.authRepository.test();
+    return this.postClient.send({ cmd: 'get_posts' }, {});
   }
 
   @Public()

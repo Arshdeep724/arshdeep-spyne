@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../node_modules/@prisma/svc-post"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POST_DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String
+  email         String   @unique
+  mobile_number String   @unique
+  password      String
+  last_login    DateTime @default(now())
+  created_at    DateTime @default(now())
+  updated_at    DateTime @default(now()) @updatedAt
+  Post          Post[]
+}
+
+model Post {
+  id         Int        @id @default(autoincrement())
+  text       String
+  image      String
+  hash_tags  String[]
+  user_id    String     @db.Uuid
+  created_by User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  created_at DateTime   @default(now())
+  updated_at DateTime   @default(now()) @updatedAt
+  Likes      Likes[]
+  Comments   Comments[]
+  Views      Views[]
+}
+
+model Views {
+  id      Int  @id @default(autoincrement())
+  post_id Int
+  Post    Post @relation(fields: [post_id], references: [id])
+}
+
+model Likes {
+  id      Int  @id @default(autoincrement())
+  post_id Int
+  Post    Post @relation(fields: [post_id], references: [id])
+}
+
+model Comments {
+  id             Int              @id @default(autoincrement())
+  post_id        Int
+  Post           Post             @relation(fields: [post_id], references: [id])
+  CommentReplies CommentReplies[]
+}
+
+model CommentReplies {
+  id         Int      @id @default(autoincrement())
+  comment_id Int
+  Comment    Comments @relation(fields: [comment_id], references: [id])
+}
