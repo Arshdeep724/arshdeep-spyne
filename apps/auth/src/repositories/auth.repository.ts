@@ -5,13 +5,13 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../db/prisma.service';
-import { CreateUserDto, LogoutUserDto, UpdateUserDto } from '../dto';
+import { CreateUserDto, LogoutUserDto } from '../dto';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
-import { v4 as uuidv4 } from 'uuid';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class AuthRepository {
@@ -20,6 +20,7 @@ export class AuthRepository {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    @Inject('POST_SERVICE') private readonly postClient: ClientProxy,
   ) {}
 
   async login(user: any) {
@@ -45,7 +46,7 @@ export class AuthRepository {
   }
 
   async createUser(createUserDto: CreateUserDto) {
-    await this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const user = await tx.user.findUnique({
         where: {
           email: createUserDto.email,
@@ -60,11 +61,13 @@ export class AuthRepository {
         createUserDto.password,
         saltRounds,
       );
-      await tx.user.create({
+      const createdUser = await tx.user.create({
         data: {
           ...createUserDto,
         },
       });
+      this.postClient.emit('user_created_event', createdUser);
+      return createdUser;
     });
   }
 
@@ -101,46 +104,8 @@ export class AuthRepository {
     });
   }
 
-  async getUserDetails(userId: string) {
-    return this.prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        last_login: true,
-        mobile_number: true,
-      },
-    });
-  }
-
-  async updateUserDetails(userId: string, updateUserDto: UpdateUserDto) {
-    return this.prisma.user.update({
-      where: {
-        id: userId,
-      },
-      data: {
-        ...updateUserDto,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        last_login: true,
-        mobile_number: true,
-      },
-    });
-  }
-
   async logout(logoutUserDto: LogoutUserDto) {
     await this.cacheManager.set(logoutUserDto.access_token, true, 3600000);
     await this.cacheManager.set(logoutUserDto.refresh_token, true, 604800000);
-  }
-
-  async getAllUsers() {
-    const users = await this.prisma.user.findMany();
-    return users;
   }
 }

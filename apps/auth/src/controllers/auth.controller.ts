@@ -24,7 +24,7 @@ export class AuthController {
   @Public()
   @Get('test')
   async test() {
-    return this.postClient.send({ cmd: 'get_posts' }, {});
+    return this.postClient.emit("test", {});
   }
 
   @Public()

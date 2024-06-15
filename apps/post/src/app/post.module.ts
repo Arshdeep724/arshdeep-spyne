@@ -1,15 +1,14 @@
 import { Module } from '@nestjs/common';
-import { PostController } from '../post.controller';
-import { PostService } from '../post.service';
-import { ClientsModule, Transport } from '@nestjs/microservices';
+import { PostRepository } from '../repositories/post.repository';
+import { PrismaService } from '../db/prisma.service';
+import { ConfigModule } from '@nestjs/config';
+import { PostController } from '../controllers/post.controller';
 
 @Module({
   imports: [
-    ClientsModule.register([
-      { name: 'POST_SERVICE', transport: Transport.REDIS },
-    ]),
+    ConfigModule.forRoot({ isGlobal: true }),
   ],
   controllers: [PostController],
-  providers: [PostService],
+  providers: [PostRepository, PrismaService],
 })
 export class PostModule {}

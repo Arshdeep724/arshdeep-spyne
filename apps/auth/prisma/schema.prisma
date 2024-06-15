@@ -1,6 +1,7 @@
 generator client {
   provider = "prisma-client-js"
   output   = "../../../node_modules/@prisma/svc-auth"
+  previewFeatures = ["fullTextSearch"]
 }
 
 datasource db {
@@ -9,12 +10,24 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(uuid()) @db.Uuid
+  id            String      @id @default(uuid()) @db.Uuid
   name          String
-  email         String   @unique
-  mobile_number String   @unique
+  email         String      @unique
+  mobile_number String      @unique
   password      String
-  last_login    DateTime @default(now())
-  created_at    DateTime @default(now())
-  updated_at    DateTime @default(now()) @updatedAt
+  last_login    DateTime    @default(now())
+  created_at    DateTime    @default(now())
+  updated_at    DateTime    @default(now()) @updatedAt
+  followers     Followers[] @relation(name: "followed-user")
+  following     Followers[] @relation(name: "follower")
+}
+
+model Followers {
+  id            Int    @id @default(autoincrement())
+  followed_user String @db.Uuid
+  Followed_User User   @relation(name: "followed-user", fields: [followed_user], references: [id], onDelete: Cascade)
+  follower      String @db.Uuid
+  Follower      User   @relation(name: "follower", fields: [follower], onDelete: Cascade, references: [id])
+
+  @@unique([followed_user, follower])
 }

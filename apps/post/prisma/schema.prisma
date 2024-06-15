@@ -9,21 +9,26 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(uuid()) @db.Uuid
-  name          String
-  email         String   @unique
-  mobile_number String   @unique
-  password      String
-  last_login    DateTime @default(now())
-  created_at    DateTime @default(now())
-  updated_at    DateTime @default(now()) @updatedAt
-  Post          Post[]
+  id             String           @id @default(uuid()) @db.Uuid
+  name           String
+  email          String           @unique
+  mobile_number  String           @unique
+  password       String
+  last_login     DateTime         @default(now())
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @default(now()) @updatedAt
+  Post           Post[]
+  Views          Views[]
+  Likes          Likes[]
+  CommentReplies CommentReplies[]
+  Comments       Comments[]
+  CommentLikes   CommentLikes[]
 }
 
 model Post {
   id         Int        @id @default(autoincrement())
-  text       String
-  image      String
+  text       String?
+  image      String?
   hash_tags  String[]
   user_id    String     @db.Uuid
   created_by User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
@@ -35,26 +40,45 @@ model Post {
 }
 
 model Views {
-  id      Int  @id @default(autoincrement())
+  id      Int    @id @default(autoincrement())
   post_id Int
-  Post    Post @relation(fields: [post_id], references: [id])
+  Post    Post   @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user_id String @db.Uuid
+  User    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 model Likes {
-  id      Int  @id @default(autoincrement())
+  id      Int    @id @default(autoincrement())
   post_id Int
-  Post    Post @relation(fields: [post_id], references: [id])
+  Post    Post   @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user_id String @db.Uuid
+  User    User   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 model Comments {
   id             Int              @id @default(autoincrement())
-  post_id        Int
-  Post           Post             @relation(fields: [post_id], references: [id])
+  text           String
+  post_id        Int              
+  Post           Post             @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user_id        String           @db.Uuid
+  User           User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
   CommentReplies CommentReplies[]
+  CommentLikes   CommentLikes[]
 }
 
 model CommentReplies {
   id         Int      @id @default(autoincrement())
+  text       String
   comment_id Int
-  Comment    Comments @relation(fields: [comment_id], references: [id])
+  Comment    Comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  user_id    String   @db.Uuid
+  User       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model CommentLikes {
+  id         Int      @id @default(autoincrement())
+  comment_id Int
+  Comment    Comments @relation(fields: [comment_id], references: [id], onDelete: Cascade)
+  user_id    String   @db.Uuid
+  User       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }

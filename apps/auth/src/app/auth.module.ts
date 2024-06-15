@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { PrismaService } from '../db/prisma.service';
-import { AuthRepository } from '../repositories/auth.repository';
+import { AuthRepository, UserRepository } from '../repositories';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import {
@@ -12,6 +12,9 @@ import {
 import { UserController, AuthController } from '../controllers';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from '../passport/guards';
+import { PostController } from '../controllers/post.controller';
 
 @Module({
   imports: [
@@ -35,13 +38,18 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
       inject: [ConfigService],
     }),
   ],
-  controllers: [AuthController, UserController],
+  controllers: [AuthController, UserController, PostController],
   providers: [
     AuthRepository,
+    UserRepository,
     LocalStrategy,
     JwtStrategy,
     RefreshTokenStrategy,
     PrismaService,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
   ],
 })
 export class AuthModule {}
